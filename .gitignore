@@ -1,0 +1,14 @@
+# Binaries
+/carnet
+/dist/
+
+# Default output directory
+/out/
+
+# Test and profiling artifacts
+*.test
+coverage.out
+*.prof
+
+# Private files
+/.private

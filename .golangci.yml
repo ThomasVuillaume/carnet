@@ -1,0 +1,3 @@
+# Placeholder — to be tuned once code exists.
+# PRD requirement: golangci-lint must pass with zero warnings.
+version: "2"
