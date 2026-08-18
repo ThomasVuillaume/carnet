@@ -2,7 +2,7 @@
 
 `carnet` is a CLI static generator for motorcycle trip logs: it turns a trip
 directory (GPX track + photos) into publish-ready static content (map PNG,
-elevation SVG, Markdown/JSON) for an Astro site, with privacy scrubbing.
+Markdown/JSON) for an Astro site, with privacy scrubbing.
 
 **`/.private/PRD-carnet.md` is the authoritative spec.** When in doubt about behavior,
 defaults, formats, or scope, read it — do not invent. This file only condenses
@@ -69,6 +69,10 @@ Coverage must stay above 85% on `internal/geo`, `internal/gpx`,
 
 ## Testing rules
 
+- Unit tests are table-driven: a slice of anonymous structs whose first field
+  is `name`, one `t.Run(tc.name, ...)` subtest per entry, `t.Parallel()` on
+  both the parent and the subtest. Add a case as a table row, never as a
+  copied test function.
 - No test may touch the network; test tiles are served from `embed.FS`
   (`testdata/tiles/`) behind the `tiles.Source` interface.
 - Rendering uses golden files (`testdata/golden/`), regenerated with `-update`,
@@ -86,8 +90,9 @@ Coverage must stay above 85% on `internal/geo`, `internal/gpx`,
 - `internal/geo/` — Mercator, Haversine, bounding box, zoom selection.
 - `internal/tiles/` — tile source interface, disk cache, bounded concurrent
   download (context-cancellable, rate-limited to 2 req/s), assembly.
-- `internal/render/` — antialiased polyline (`x/image/vector`), attribution,
-  elevation SVG.
+- `internal/render/` — antialiased polyline (`x/image/vector`), attribution.
+  No elevation profile: PRD decision D5 puts altitude out of v1 scope, and the
+  track model carries no elevation field.
 - `internal/photos/` — EXIF read, photo/track correlation, renaming.
 - `internal/privacy/` — exclusion zones, trimming, rounding, EXIF purge,
   final leak check.

@@ -1,3 +1,42 @@
-# Placeholder — to be tuned once code exists.
-# PRD requirement: golangci-lint must pass with zero warnings.
+# golangci-lint v2 configuration.
+# PRD requirement (§11, Definition of Done): zero warning.
 version: "2"
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - bodyclose # tile downloads must not leak response bodies (§6.8)
+    - depguard # mechanically enforces the dependency ban of §4.1
+    - errorlint # enforces %w and errors.Is over == (§4.2)
+    - gocritic
+    - misspell
+    - nilerr
+    - predeclared
+    - revive
+
+  settings:
+    depguard:
+      rules:
+        forbidden-by-prd:
+          deny:
+            - pkg: github.com/flopp/go-staticmaps
+              desc: "PRD §4.1: map assembly is written by hand, that is the point of the project"
+            - pkg: github.com/fogleman/gg
+              desc: "PRD §4.1: rasterisation goes through golang.org/x/image/vector"
+            - pkg: github.com/tkrajina/gpxgo
+              desc: "PRD §4.1: GPX parsing goes through encoding/xml"
+
+    errorlint:
+      errorf: true # flags %v used where %w is meant
+      asserts: true # flags err.(*T) instead of errors.As
+      comparison: true # flags err == target instead of errors.Is
+
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
