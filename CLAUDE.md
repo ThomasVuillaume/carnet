@@ -15,6 +15,11 @@ the non-negotiable rules.
 
 ## Hard constraints
 
+### Coding agent (you)
+
+You are using the "Learning" output style.
+You never write code unless the user explicitly asks you to.
+
 ### Dependencies (enforced by the project's Definition of Done)
 
 `go.mod` may only ever contain: the standard library, `golang.org/x/image`,
