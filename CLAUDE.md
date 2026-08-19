@@ -86,8 +86,11 @@ Coverage must stay above 85% on `internal/geo`, `internal/gpx`,
 - `cmd/carnet/` — entry point, flag parsing, wiring; the only place `panic`
   or `os.Exit` is allowed.
 - `internal/config/` — `carnet.yaml` loading and validation.
-- `internal/gpx/` — GPX parsing (`encoding/xml`), track model, simplification.
-- `internal/geo/` — Mercator, Haversine, bounding box, zoom selection.
+- `internal/gpx/` — GPX parsing (`encoding/xml`), track model.
+- `internal/geo/` — Mercator, Haversine, bounding box, zoom selection,
+  Douglas-Peucker simplification (PRD decision D6). This package speaks only
+  in numbers — coordinates, pixels, indices — and imports no other internal
+  package. `internal/gpx` imports `internal/geo`, never the reverse.
 - `internal/tiles/` — tile source interface, disk cache, bounded concurrent
   download (context-cancellable, rate-limited to 2 req/s), assembly.
 - `internal/render/` — antialiased polyline (`x/image/vector`), attribution.

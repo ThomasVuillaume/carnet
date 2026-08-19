@@ -1,8 +1,3 @@
-// Package gpx parses GPX 1.1 files into an in-memory track model and provides
-// track simplification. Parsing relies on encoding/xml only.
-//
-// The model carries no elevation: PRD decision D5 puts altitude out of v1
-// scope, the recording device exporting none.
 package gpx
 
 import "time"

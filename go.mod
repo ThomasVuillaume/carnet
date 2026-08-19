@@ -1,3 +1,3 @@
-module github.com/ThomasVuillaume/carnet
+module carnet
 
 go 1.26
