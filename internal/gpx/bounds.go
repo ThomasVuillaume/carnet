@@ -1,5 +1,7 @@
 package gpx
 
+import "carnet/internal/geo"
+
 // Bounds returns the smallest lat/lon rectangle enclosing every point of every
 // segment, and reports whether the track held any point at all. When it did
 // not, the returned Bounds is the zero value and must not be read.
@@ -20,11 +22,11 @@ package gpx
 // Callers that publish the result must reorder it. The frontmatter bbox is
 // [minLon, minLat, maxLon, maxLat] — GeoJSON order, longitude first — which is
 // not the field order of this struct.
-func (t *Track) Bounds() (Bounds, bool) {
+func (t *Track) Bounds() (geo.Bounds, bool) {
 	var point, ok = t.firstPoint()
 
 	if !ok {
-		return Bounds{}, false
+		return geo.Bounds{}, false
 	}
 
 	minLat := point.Lat
@@ -49,5 +51,5 @@ func (t *Track) Bounds() (Bounds, bool) {
 		}
 	}
 
-	return Bounds{MinLat: minLat, MinLon: minLon, MaxLat: maxLat, MaxLon: maxLon}, true
+	return geo.Bounds{MinLat: minLat, MinLon: minLon, MaxLat: maxLat, MaxLon: maxLon}, true
 }

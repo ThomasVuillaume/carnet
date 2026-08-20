@@ -1,6 +1,10 @@
 package gpx
 
-import "testing"
+import (
+	"carnet/internal/geo"
+
+	"testing"
+)
 
 // TestBounds asserts exactly, at no tolerance. Bounds performs no arithmetic:
 // every value it returns is a coordinate copied verbatim out of some point, so
@@ -19,19 +23,19 @@ func TestBounds(t *testing.T) {
 	tests := []struct {
 		name       string
 		track      Track
-		wantBounds Bounds
+		wantBounds geo.Bounds
 		wantOK     bool
 	}{
 		{
 			name:       "empty track",
 			track:      Track{},
-			wantBounds: Bounds{},
+			wantBounds: geo.Bounds{},
 			wantOK:     false,
 		},
 		{
 			name:       "one empty segment",
 			track:      Track{Segments: []Segment{{Points: []Point{}}}},
-			wantBounds: Bounds{},
+			wantBounds: geo.Bounds{},
 			wantOK:     false,
 		},
 		{
@@ -41,7 +45,7 @@ func TestBounds(t *testing.T) {
 					{Lat: 45.1204, Lon: 5.4331},
 				}},
 			}},
-			wantBounds: Bounds{MinLat: 45.1204, MinLon: 5.4331, MaxLat: 45.1204, MaxLon: 5.4331},
+			wantBounds: geo.Bounds{MinLat: 45.1204, MinLon: 5.4331, MaxLat: 45.1204, MaxLon: 5.4331},
 			wantOK:     true,
 		},
 		{
@@ -53,7 +57,7 @@ func TestBounds(t *testing.T) {
 					{Lat: 44.9000, Lon: 4.9012},
 				}},
 			}},
-			wantBounds: Bounds{MinLat: 44.6821, MinLon: 4.9012, MaxLat: 45.2019, MaxLon: 5.7433},
+			wantBounds: geo.Bounds{MinLat: 44.6821, MinLon: 4.9012, MaxLat: 45.2019, MaxLon: 5.7433},
 			wantOK:     true,
 		},
 		{
@@ -66,7 +70,7 @@ func TestBounds(t *testing.T) {
 					{Lat: 44.6821, Lon: 4.9012},
 				}},
 			}},
-			wantBounds: Bounds{MinLat: 44.6821, MinLon: 4.9012, MaxLat: 45.2019, MaxLon: 5.7433},
+			wantBounds: geo.Bounds{MinLat: 44.6821, MinLon: 4.9012, MaxLat: 45.2019, MaxLon: 5.7433},
 			wantOK:     true,
 		},
 		{
@@ -76,7 +80,7 @@ func TestBounds(t *testing.T) {
 				{Points: []Point{}},
 				{Points: []Point{{Lat: 44.6821, Lon: 4.9012}}},
 			}},
-			wantBounds: Bounds{MinLat: 44.6821, MinLon: 4.9012, MaxLat: 45.2019, MaxLon: 5.7433},
+			wantBounds: geo.Bounds{MinLat: 44.6821, MinLon: 4.9012, MaxLat: 45.2019, MaxLon: 5.7433},
 			wantOK:     true,
 		},
 		{
@@ -88,7 +92,7 @@ func TestBounds(t *testing.T) {
 					{Lat: 44.6821, Lon: 4.9012},
 				}},
 			}},
-			wantBounds: Bounds{MinLat: 44.6821, MinLon: 4.9012, MaxLat: 45.2019, MaxLon: 5.7433},
+			wantBounds: geo.Bounds{MinLat: 44.6821, MinLon: 4.9012, MaxLat: 45.2019, MaxLon: 5.7433},
 			wantOK:     true,
 		},
 		{
@@ -99,7 +103,7 @@ func TestBounds(t *testing.T) {
 					{Lat: -34.6037, Lon: -58.3816},
 				}},
 			}},
-			wantBounds: Bounds{MinLat: -34.6037, MinLon: -70.6693, MaxLat: -33.4489, MaxLon: -58.3816},
+			wantBounds: geo.Bounds{MinLat: -34.6037, MinLon: -70.6693, MaxLat: -33.4489, MaxLon: -58.3816},
 			wantOK:     true,
 		},
 	}
