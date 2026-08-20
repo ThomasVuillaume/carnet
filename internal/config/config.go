@@ -1,7 +1,7 @@
 package config
 
 // Config is the whole of carnet.yaml. Title, StartDate and Track are required;
-// every other key has a default, which is why Load decodes into Default rather
+// every other key has a default, which is why Load decodes into Defaults returns rather
 // than into a zero value.
 //
 // Track and PhotosDir are relative to the trip directory, not to the working
