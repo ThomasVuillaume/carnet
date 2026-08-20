@@ -32,3 +32,14 @@ type Bounds struct {
 	MinLat, MinLon float64
 	MaxLat, MaxLon float64
 }
+
+// firstPoint reports whether the track contains any point at all.
+// It returns the first point found, or the zero value if none exists.
+func (t *Track) firstPoint() (Point, bool) {
+	for _, segment := range t.Segments {
+		if len(segment.Points) > 0 {
+			return segment.Points[0], true
+		}
+	}
+	return Point{}, false
+}
