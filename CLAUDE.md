@@ -46,6 +46,24 @@ derived from map iteration or goroutine scheduling.
 - `context.Context` propagated through anything that blocks or does network I/O.
 - Logging via `log/slog` to stderr; level controlled by `--verbose`.
 
+### Comments
+
+Comments carry what the code cannot: the *why*, the trade-off taken, the
+numeric trap, the decision a future reader would otherwise undo. They must be
+dense enough to be worth reading and short enough to be read.
+
+- One idea per sentence. Short sentences. No rambling clauses.
+- Say it once. No restating the same reason in two registers.
+- Never paraphrase the code. `// increment i` earns nothing.
+- Cut rhetorical framing — "it is not decoration", "deliberately", "note that",
+  "in one step" — and cut imagery that adds no fact.
+- Keep hard facts: measured figures, ULP behaviour, spec references, PRD
+  decision numbers, the consequence downstream.
+- A test's header explains what the table discriminates and why the tolerances
+  differ. It does not narrate the assertions.
+- If a comment cannot be shortened without losing a fact, it is the right
+  length. Length is a symptom, never a target.
+
 ## Privacy is a security requirement
 
 Pipeline order is fixed: exclusion zones → trim start/end → coordinate

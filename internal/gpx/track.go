@@ -4,9 +4,9 @@ import "time"
 
 // Point is a single recorded position, in decimal degrees (WGS84).
 //
-// Time is optional: some devices omit <time>. Callers must test it with
-// IsZero rather than comparing against a literal, and packages that need a
-// timestamp — photo correlation, moving time — must tolerate its absence.
+// Time is optional: some devices omit <time>. Test it with IsZero rather than
+// against a literal, and expect its absence wherever a timestamp is needed —
+// photo correlation, moving time.
 type Point struct {
 	Lat  float64
 	Lon  float64
@@ -14,8 +14,7 @@ type Point struct {
 }
 
 // Segment is a contiguous run of points recorded without interruption. A GPX
-// track may contain several, and privacy exclusion zones can split one segment
-// into several more.
+// track may hold several, and privacy exclusion zones can split one into more.
 type Segment struct {
 	Points []Point
 }
@@ -27,8 +26,7 @@ type Track struct {
 	Segments []Segment
 }
 
-// firstPoint reports whether the track contains any point at all.
-// It returns the first point found, or the zero value if none exists.
+// firstPoint returns the first point of the track, or false if it holds none.
 func (t *Track) firstPoint() (Point, bool) {
 	for _, segment := range t.Segments {
 		if len(segment.Points) > 0 {

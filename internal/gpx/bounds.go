@@ -6,22 +6,18 @@ import "carnet/internal/geo"
 // segment, and reports whether the track held any point at all. When it did
 // not, the returned Bounds is the zero value and must not be read.
 //
-// The boolean is not decoration. The zero Bounds is a perfectly valid
-// rectangle, collapsed on 0°N 0°E in the Gulf of Guinea — the very coordinates
-// pointFrom already treats as the tell of a <trkpt> missing its attributes. A
-// track with no point has no extent, and saying so out of band is what keeps
-// an absent answer from being read as a real one downstream, where zoom
-// selection would happily frame a map on the Atlantic.
+// The boolean matters because the zero Bounds is itself a valid rectangle,
+// collapsed on 0°N 0°E — the coordinates pointFrom already treats as the tell
+// of a <trkpt> missing its attributes. Reporting emptiness out of band keeps
+// zoom selection from framing a map on the Atlantic.
 //
-// Longitude is compared as a plain number, so a track crossing the
-// antimeridian yields a rectangle spanning the wrong way round the globe. That
-// limit is accepted, not overlooked: carnet maps rides that never come near
-// ±180°, and handling the general case would force a wrap-around flag on every
-// caller for a case none of them will meet.
+// Longitude is compared as a plain number, so a track crossing the antimeridian
+// yields a rectangle spanning the wrong way round the globe. That limit is
+// accepted: carnet maps rides that never come near ±180°, and the general case
+// would force a wrap-around flag on every caller.
 //
-// Callers that publish the result must reorder it. The frontmatter bbox is
-// [minLon, minLat, maxLon, maxLat] — GeoJSON order, longitude first — which is
-// not the field order of this struct.
+// Callers that publish the result must reorder it: the frontmatter bbox is
+// [minLon, minLat, maxLon, maxLat], GeoJSON order, longitude first.
 func (t *Track) Bounds() (geo.Bounds, bool) {
 	var point, ok = t.firstPoint()
 

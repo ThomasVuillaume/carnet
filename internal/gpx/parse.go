@@ -10,9 +10,8 @@ import (
 )
 
 // SyntaxError reports a GPX file that could not be read as XML at all, as
-// opposed to one that is well-formed but holds unusable data. Callers that
-// must tell a corrupt download from a merely empty track distinguish the two
-// with errors.As.
+// opposed to one that is well-formed but holds unusable data. Callers tell a
+// corrupt download from a merely empty track with errors.As.
 type SyntaxError struct {
 	Err error
 }
@@ -20,16 +19,14 @@ type SyntaxError struct {
 func (e *SyntaxError) Error() string { return "gpx: malformed XML: " + e.Err.Error() }
 func (e *SyntaxError) Unwrap() error { return e.Err }
 
-// errSkipPoint, returned by pointFrom, tells Parse to drop one point and carry
-// on rather than reject the whole file. Wrap it with %w to keep a reason
-// attached.
+// errSkipPoint tells Parse to drop one point and carry on rather than reject
+// the whole file. Wrap it with %w to keep a reason attached.
 var errSkipPoint = errors.New("skip point")
 
 // gpxFile mirrors the subset of GPX that carnet consumes. Element names carry
 // no namespace prefix on purpose: encoding/xml then matches on local name
-// alone, so files declaring the GPX 1.0 namespace parse just as well as 1.1.
-// Unknown children — the Garmin gpxtpx:TrackPointExtension blocks in the test
-// fixture, for instance — are silently ignored by the decoder.
+// alone, so GPX 1.0 files parse as well as 1.1. Unknown children, such as the
+// Garmin gpxtpx:TrackPointExtension blocks in the fixture, are ignored.
 type gpxFile struct {
 	XMLName xml.Name `xml:"gpx"`
 	Tracks  []xmlTrk `xml:"trk"`
@@ -44,8 +41,8 @@ type xmlTrkseg struct {
 	Points []xmlTrkpt `xml:"trkpt"`
 }
 
-// xmlTrkpt keeps Time as a string so that a malformed timestamp is a decision
-// for pointFrom rather than a decoding failure that loses the whole file.
+// xmlTrkpt keeps Time as a string so that a malformed timestamp is pointFrom's
+// decision rather than a decoding failure that loses the whole file.
 type xmlTrkpt struct {
 	Lat  float64 `xml:"lat,attr"`
 	Lon  float64 `xml:"lon,attr"`
@@ -53,26 +50,24 @@ type xmlTrkpt struct {
 }
 
 // pointFrom converts one raw <trkpt> into a Point, and owns the parser's
-// tolerance policy: which defects are worth failing the whole file over, and
-// which merely disqualify a single point.
+// tolerance policy: which defects fail the whole file, and which disqualify a
+// single point.
 //
-// A missing <time> is not a defect. Hand-drawn routes and itinerary exports
-// carry none, and their geometry is still worth mapping; such a point keeps
-// its coordinates and leaves Point.Time at its zero value. A <time> that is
-// present but unreadable is treated as a defect, because corrupt data says
-// something that absent data does not.
+// A missing <time> is not a defect — hand-drawn routes and itinerary exports
+// carry none, and their geometry is still worth mapping — so such a point keeps
+// its coordinates and leaves Point.Time zero. A <time> present but unreadable
+// is a defect: corrupt data says something absent data does not.
 func pointFrom(raw xmlTrkpt) (Point, error) {
-	// NaN has to be rejected before the range checks below. Every comparison
-	// involving NaN is false, so both NaN < -90 and NaN > 90 are false and a
-	// NaN would sail straight through them. strconv.ParseFloat, which
-	// encoding/xml calls, accepts the literal "NaN" without complaint.
+	// NaN must be rejected before the range checks: every comparison involving
+	// NaN is false, so it would sail through both of them. strconv.ParseFloat,
+	// which encoding/xml calls, accepts the literal "NaN".
 	if math.IsNaN(raw.Lat) || math.IsNaN(raw.Lon) {
 		return Point{}, fmt.Errorf("%w: coordinates are not numbers", errSkipPoint)
 	}
 	if raw.Lat == 0 && raw.Lon == 0 {
 		// A real position in the Gulf of Guinea, but far more likely a <trkpt>
-		// whose lat/lon attributes were absent: encoding/xml leaves a missing
-		// attribute at zero and reports nothing.
+		// with no lat/lon attributes: encoding/xml leaves those at zero and
+		// reports nothing.
 		return Point{}, fmt.Errorf("%w: lat/lon both zero", errSkipPoint)
 	}
 	if raw.Lat < -90 || raw.Lat > 90 {
@@ -97,7 +92,7 @@ func pointFrom(raw xmlTrkpt) (Point, error) {
 }
 
 // Parse reads a GPX document and returns its first track. Empty segments are
-// dropped; a document holding no usable point yields a Track with no segment
+// dropped; a document with no usable point yields a Track with no segment
 // rather than an error, leaving that judgement to the caller.
 func Parse(r io.Reader) (*Track, error) {
 	var doc gpxFile

@@ -5,38 +5,35 @@ import (
 	"testing"
 )
 
-// TestDistanceM checks DistanceM against expectations of three different
-// kinds, which is why the tolerance is a per-case field rather than a single
-// package-level epsilon: sharing one epsilon would impose the loosest case on
-// the strictest, and two of these are exact.
+// TestDistanceM mixes expectations of three kinds, hence a per-case tolerance:
+// one package-level epsilon would impose the loosest case on the strictest, and
+// two of these are exact.
 //
-// Derived expectations, asserted with no tolerance at all. Along a meridian
-// starting exactly at the equator, lat1 is 0 and the true distance reduces to
-// earthRadiusM * phi2 — a value that follows from our own constant, needing no
-// external source, and that DistanceM returns bit for bit. The antipodal case
-// is exact for a different reason: the clamp maps every near-antipodal pair
-// onto a == 1, hence asin(1) and a result of exactly pi * earthRadiusM. The
-// 5 to 15 m meridian cases are derived the same way but carry a nanometre of
-// tolerance, since Sin and Asin are not required to be correctly rounded and
-// may differ by an ULP across architectures. That is still four orders of
-// magnitude tighter than the 0.18 mm by which the spherical law of cosines
-// misses at this scale, so these cases do discriminate between formulas —
+// Derived expectations, at no tolerance. Along a meridian from the equator the
+// true distance reduces to earthRadiusM * phi2, which follows from our own
+// constant and which DistanceM returns bit for bit. The antipodal case is exact
+// for another reason: the clamp maps every near-antipodal pair onto a == 1,
+// hence asin(1) and exactly pi * earthRadiusM.
+//
+// The 5 to 15 m meridian cases are derived the same way but carry a nanometre,
+// since Sin and Asin may differ by an ULP across architectures. That is four
+// orders of magnitude tighter than the 0.18 mm by which the spherical law of
+// cosines misses at this scale, so they still discriminate between formulas —
 // which a tolerance taken from a map reading would not.
 //
-// A measured expectation, asserted loosely. The Eiffel Tower to Capitole
+// One measured expectation, asserted loosely. The Eiffel Tower to Capitole
 // distance comes from cartes.gouv.fr, whose model is not ours: its tolerance
-// absorbs the gap between an ellipsoid and our sphere, not a computation
-// error. Tightening it would test the reference rather than the code.
+// absorbs the gap between an ellipsoid and our sphere, not a computation error.
+// Tightening it would test the reference rather than the code.
 //
 // The antipodal coordinates were found by sweeping, not chosen. The obvious
-// candidates — (0,0) to (0,180), or pole to pole — never trigger the bug,
-// because sin and cos are exact on those arguments and no rounding residue
-// accumulates. Only pairs at arbitrary latitudes push the intermediate "a"
-// past 1 and, before the clamp in DistanceM, made asin return NaN. Removing
-// that clamp must turn this table red; it has been checked by mutation.
+// candidates — (0,0) to (0,180), or pole to pole — never trigger the bug, sin
+// and cos being exact on those arguments. Only arbitrary latitudes push the
+// intermediate "a" past 1 and, before the clamp, made asin return NaN. Removing
+// that clamp must turn this table red; checked by mutation.
 //
 // Hence the NaN guard ahead of every comparison: math.Abs(NaN-want) > tol is
-// false, so a NaN result would silently satisfy the assertions below.
+// false, so a NaN would silently satisfy the assertions below.
 func TestDistanceM(t *testing.T) {
 	t.Parallel()
 

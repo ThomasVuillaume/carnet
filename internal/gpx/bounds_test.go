@@ -6,17 +6,15 @@ import (
 	"testing"
 )
 
-// TestBounds asserts exactly, at no tolerance. Bounds performs no arithmetic:
-// every value it returns is a coordinate copied verbatim out of some point, so
-// the expectations below are literals rather than expressions, and no platform
-// can move them by an ULP.
+// TestBounds asserts exactly, at no tolerance. Bounds performs no arithmetic —
+// every value it returns is a coordinate copied out of some point — so the
+// expectations are literals and no platform can move them by an ULP.
 //
 // Two cases carry most of the weight. "empty track" pins the boolean, without
-// which an absent extent would reach zoom selection disguised as a rectangle
-// over the Gulf of Guinea. "southern and western hemispheres" holds no
-// coordinate above zero, so an implementation seeding its minima and maxima at
-// zero instead of at the first point returns 0 for both maxima and stays green
-// on every other case in this table.
+// which an absent extent reaches zoom selection disguised as a rectangle over
+// the Gulf of Guinea. "southern and western hemispheres" holds no coordinate
+// above zero: an implementation seeding its extremes at zero rather than at the
+// first point returns 0 for both maxima and stays green on every other row.
 func TestBounds(t *testing.T) {
 	t.Parallel()
 

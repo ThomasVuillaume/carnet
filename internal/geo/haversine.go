@@ -21,22 +21,17 @@ func DistanceM(lat1, lon1, lat2, lon2 float64) float64 {
 	deltaLon := lon2Rad - lon1Rad
 	a := math.Sin(deltaLat/2)*math.Sin(deltaLat/2) + math.Cos(lat1Rad)*math.Cos(lat2Rad)*math.Sin(deltaLon/2)*math.Sin(deltaLon/2)
 
-	// keep "a" within the domain asin accepts.
+	// Keep "a" within the domain Asin accepts. The identity behind the formula
+	// is a = sin²(c/2) with c in [0, pi], so a belongs to [0, 1] by
+	// construction — but the expression above chains four Sin, two Cos, two
+	// products and a sum, and near antipodal points those residues land an ULP
+	// or two past 1. Measured: 10.3% of exactly antipodal pairs overshoot, and
+	// 8 in 200000 far enough that Asin returns NaN, poisoning every distance
+	// summed afterwards.
 	//
-	// The identity behind the formula is a = sin²(c/2) with c in [0, pi], so a
-	// belongs to [0, 1] by construction: no valid pair of coordinates can put
-	// it above 1. Rounding can, though. The expression above chains four Sin,
-	// two Cos, two products and a sum, each rounded, and near antipodal points
-	// those residues land a one or two ULP past 1. Measured: 10.3% of exactly
-	// antipodal pairs overshoot, and 8 in 200000 overshoot far enough that
-	// Sqrt stays above 1 and Asin returns NaN, poisoning every distance summed
-	// afterwards.
-	//
-	// Restoring the invariant is therefore a rounding correction, not a
-	// defensive guard against bad input.
-	//
-	// No lower bound is needed: latitudes stay within [-90, 90], so both
-	// cosines are non-negative and a cannot go below 0.
+	// This restores an invariant broken by rounding; it is not a guard against
+	// bad input. No lower bound is needed: latitudes stay within [-90, 90], so
+	// both cosines are non-negative and a cannot go below 0.
 	a = min(a, 1)
 	c := math.Asin(math.Sqrt(a))
 

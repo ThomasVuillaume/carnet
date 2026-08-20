@@ -5,16 +5,12 @@ import (
 	"testing"
 )
 
-// TestMaxLatitude checks the constant against its own definition, atan(sinh(pi))
-// in degrees, computed here rather than transcribed. The literal in mercator.go
-// exists so that a reader can match carnet against the EPSG:3857 specification
-// digit for digit; that readability is worth nothing if a typo in the last
-// places went unnoticed, and every boundary case in TestProject would happily
-// follow a wrong constant into the wrong place.
+// TestMaxLatitude checks the literal against its definition, atan(sinh(pi)) in
+// degrees. A typo in its last places would go unnoticed otherwise, and every
+// boundary case in TestProject would follow it.
 //
-// The tolerance covers the decimal literal being 16 significant digits of a
-// value the computation returns to full precision, plus platform latitude in
-// Atan and Sinh.
+// The tolerance covers the literal's 16 significant digits, plus platform
+// differences in Atan and Sinh.
 func TestMaxLatitude(t *testing.T) {
 	t.Parallel()
 
@@ -26,46 +22,30 @@ func TestMaxLatitude(t *testing.T) {
 	}
 }
 
-// TestProject keeps the tolerance as a per-case field, for the same reason
-// TestDistanceM does: some expectations here are exact and others are not. The
-// x half of the projection is affine — (lon + 180) / 360 on well-conditioned
-// values — so it is bit-exact and asserted at zero tolerance. The y half goes
-// through Tan and Log, which the standard does not require to be correctly
-// rounded, so the cases that land mid-square carry a few ULP of slack. The
-// cases that land on an edge are exact again, but for a third reason: the
-// clamp in Project returns the bound itself, not a computed approach to it.
+// TestProject keeps the tolerance per case, as TestDistanceM does. Three
+// regimes: x is affine and bit-exact; y goes through Tan and Log, which the
+// standard does not require to be correctly rounded, so mid-square cases carry
+// a few ULP; edge cases are exact again because the clamp returns the bound
+// itself rather than approaching it.
 //
-// Expectations were computed outside this package and through atanh(sin(phi)),
-// a different form of the inverse Gudermannian than the ln(tan(pi/4 + phi/2))
-// the implementation uses. The table therefore discriminates between a correct
-// projection and a plausible-looking one, instead of replaying our own
-// arithmetic back at us.
+// Expectations were computed outside this package through atanh(sin(phi)), a
+// different form of the inverse Gudermannian than the implementation uses, so
+// the table does not replay our own arithmetic back at us.
 //
-// Two properties are asserted on every row rather than as cases of their own,
-// the way TestDistanceM asserts symmetry:
+// Two properties are asserted on every row rather than as cases of their own:
+// hemispheric symmetry, y(phi) + y(-phi) = 1 since gd⁻¹ is odd, which catches a
+// sign error in the flip; and separability, x depending on lon alone and y on
+// lat alone, asserted with == because both calls run identical arithmetic.
 //
-// Hemispheric symmetry, y(phi) + y(-phi) = 1, because gd⁻¹ is odd. It catches a
-// sign error in the flip that a single-hemisphere expectation would not, and it
-// holds bit-exactly on every latitude tried — the tolerance is there for
-// platform differences in Tan and Log, not for the identity.
+// The domain guard covers y only: Project bounds it unconditionally but
+// promises nothing for x outside lon in [-180, 180], which the
+// "longitude past the antimeridian" case pins.
 //
-// Separability: x depends on lon alone and y on lat alone, which is a property
-// of Mercator itself, not of this implementation. Asserted with == because both
-// calls run the same arithmetic on the same argument; anything else means a
-// coordinate leaked across.
-//
-// The domain guard covers y only. Project promises [0, 1] for y
-// unconditionally, the clamp seeing to it, but promises nothing for x outside
-// lon in [-180, 180] — the "longitude past the antimeridian" case below exists
-// precisely to pin that documented refusal to wrap.
-//
-// The NaN guard is not decoration either. math.Abs(NaN-want) > tol is false, so
-// a NaN would satisfy the value assertions in silence. It is what makes the
-// beyond-the-pole case bite: 91 degrees puts pi/4 + phi/2 past a right angle,
-// Tan turns negative, Log returns NaN, and Go's min and max propagate it. That
-// case is the only one in the table that fails if the clamp on lat is removed —
-// at 89 or even 90 degrees the clamp on y quietly repairs the result and hides
-// the loss.
+// The NaN guard carries weight because math.Abs(NaN-want) > tol is false — a
+// NaN would satisfy every value assertion in silence. It is what makes the
+// beyond-the-pole case bite, and that case is the only one that fails if the
+// clamp on lat is removed: at 89 or 90 degrees the clamp on y repairs the
+// result and hides the loss. Checked by mutation.
 func TestProject(t *testing.T) {
 	t.Parallel()
 
@@ -98,9 +78,7 @@ func TestProject(t *testing.T) {
 			tolerance: 0,
 		},
 		{
-			// Project documents that it does not wrap longitude, leaving the
-			// result outside the unit square where it stays visible. Pinned
-			// here so that adding a wrap later is a deliberate change to a
+			// Pinned so that adding a wrap later is a deliberate change to a
 			// stated contract rather than a silent one.
 			name: "longitude past the antimeridian is not wrapped",
 			lat:  0, lon: 200,
@@ -116,8 +94,8 @@ func TestProject(t *testing.T) {
 			tolerance: 1e-12,
 		},
 		{
-			// Both coordinates negative, and neither y nor x may come back
-			// from the northern or eastern half by accident.
+			// Both coordinates negative: neither half of the result may come
+			// back from the northern or eastern side by accident.
 			name: "southern and western hemispheres",
 			lat:  -33.4489, lon: -70.6693,
 			wantX:     0.3036963888888889,
@@ -125,9 +103,9 @@ func TestProject(t *testing.T) {
 			tolerance: 1e-12,
 		},
 		{
-			// The square's own edge: gd⁻¹ reaches pi here, so y is 0 — but only
-			// after the clamp, the raw expression landing 1.11e-16 below zero.
-			// At zero tolerance this case fails if that clamp goes away.
+			// gd⁻¹ reaches pi here, so y is 0 — but only after the clamp, the
+			// raw expression landing 1.11e-16 below zero. At zero tolerance
+			// this case fails if that clamp goes away.
 			name: "northern edge of the square",
 			lat:  MaxLatitude, lon: 0,
 			wantX:     0.5,
@@ -158,7 +136,7 @@ func TestProject(t *testing.T) {
 		{
 			// Past the pole the tangent changes sign and Log returns NaN, which
 			// the clamp on y cannot repair. Only the clamp on lat keeps this
-			// case finite, which makes it the one row that tests it.
+			// finite, which makes it the one row that tests it.
 			name: "latitude past the pole",
 			lat:  91, lon: 0,
 			wantX:     0.5,

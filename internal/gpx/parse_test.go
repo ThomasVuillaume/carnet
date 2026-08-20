@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-// wrap builds a minimal GPX document around raw <trkpt> markup, so that table
-// entries stay readable.
+// wrap builds a minimal GPX document around raw <trkpt> markup, keeping table
+// entries readable.
 func wrap(body string) string {
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
@@ -48,7 +48,7 @@ func TestPointFrom(t *testing.T) {
 		},
 		{
 			// Every comparison against NaN is false, so the range checks alone
-			// would let this through. Regression guard.
+			// would let this through.
 			name:     "NaN latitude",
 			raw:      xmlTrkpt{Lat: math.NaN(), Lon: 3.858475, Time: stamp},
 			wantSkip: true,

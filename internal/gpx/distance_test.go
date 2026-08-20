@@ -7,24 +7,21 @@ import (
 	"carnet/internal/geo"
 )
 
-// TestLengthM exercises the summation, not the distance formula:
-// haversine_test.go already pins geo.DistanceM. That is why most expectations
-// are built from geo.DistanceM itself. Such a case would stay green if the
-// formula were wrong, but turns red the moment LengthM pairs the wrong points,
-// drops a segment, or bridges the gap between two — which is what this test is
-// for.
+// TestLengthM exercises the summation, not the distance formula, which
+// haversine_test.go already pins. Most expectations are therefore built from
+// geo.DistanceM itself: such a case would stay green if the formula were wrong,
+// but turns red the moment LengthM pairs the wrong points, drops a segment, or
+// bridges the gap between two.
 //
-// One case steps outside that circularity on purpose. "one segment, two
-// points" carries a literal 111195.08 m, one degree of longitude at the
-// equator, so that an error of unit — a stray division by 1000 — has somewhere
-// to fail. Its tolerance is half a metre: loose enough that Sin, Cos and Asin
-// may each land an ULP apart from one architecture to the next, tight enough
-// that no unit mistake survives it.
+// "one segment, two points" steps outside that circularity with a literal
+// 111195.08 m, one degree of longitude at the equator, so that a unit error —
+// a stray division by 1000 — has somewhere to fail. Half a metre of tolerance:
+// loose enough for an ULP of drift across architectures, tight enough that no
+// unit mistake survives.
 //
-// The other cases assert exactly, at tolerance zero, and can afford to. Adding
-// zero to a float returns it unchanged, and doubling is exact in binary
-// floating point, so the arithmetic the table performs is bit for bit the
-// arithmetic LengthM performs. Nothing there depends on the platform.
+// The rest assert at tolerance zero and can afford to. Adding zero returns the
+// float unchanged and doubling is exact in binary floating point, so the table
+// performs bit for bit the arithmetic LengthM performs.
 func TestLengthM(t *testing.T) {
 	t.Parallel()
 
