@@ -26,9 +26,13 @@ linters:
             - $gostd
             - carnet
             - golang.org/x/image
-            - gopkg.in/yaml.v3
+            # go.yaml.in is the YAML project's canonical home since v3; the
+            # gopkg.in path is a legacy alias for the same code.
+            - go.yaml.in/yaml
           # Redundant against the allow list above, kept for the message: these
-          # four are the ones a future contributor would reach for.
+          # three are the ones a future contributor would reach for. The fourth
+          # ban of §4.1, any geometry library, is a category rather than a path,
+          # so depguard cannot carry it and only review can.
           deny:
             - pkg: github.com/flopp/go-staticmaps
               desc: "PRD §4.1: map assembly is written by hand, that is the point of the project"

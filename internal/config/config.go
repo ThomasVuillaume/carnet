@@ -1,15 +1,14 @@
 package config
 
-// Config is the whole of carnet.yaml. Title, StartDate and Track are required;
-// every other key has a default, which is why Load decodes into Defaults returns rather
-// than into a zero value.
+// Config is the whole of carnet.yaml. Title, StartDate, EndDate and Track are
+// required; every other key has a default, see Defaults.
 //
-// Track and PhotosDir are relative to the trip directory, not to the working
-// directory, and are resolved after loading.
+// Track, PhotosDir and Photos.CaptionsFile are relative to the trip directory,
+// not to the working directory, and are resolved after loading.
 type Config struct {
 	Title     string   `yaml:"title"`
-	StartDate string   `yaml:"start_date"`
-	EndDate   string   `yaml:"end_date"`
+	StartDate Date     `yaml:"start_date"`
+	EndDate   Date     `yaml:"end_date"`
 	Summary   string   `yaml:"summary"`
 	Track     string   `yaml:"track"`
 	PhotosDir string   `yaml:"photos_dir"`
@@ -21,8 +20,10 @@ type Config struct {
 
 // Map governs the rendered PNG. Width, Height and Padding are in pixels, and
 // padding costs twice per axis since it applies to both opposite edges.
-// TrackColor is an "#rrggbb" string. MaxZoom caps the ladder zoom selection
-// walks down; the level actually used is the largest one the track fits in.
+// TrackColor is an "#rrggbb" string and TrackWidth its stroke in pixels.
+// MaxZoom caps the ladder zoom selection walks down; the level actually used is
+// the largest one the track fits in. TileSource is the logical name of a tile
+// provider, resolved to a URL template (PRD §6.8).
 type Map struct {
 	Width      int    `yaml:"width"`
 	Height     int    `yaml:"height"`
@@ -67,8 +68,10 @@ type ExclusionZone struct {
 
 // Photos governs photo/track correlation. ClockOffsetS is added to EXIF
 // timestamps before matching, to correct a camera clock. MatchMode is "gps",
-// "time" or "gps_then_time". When both methods answer and disagree by more
-// than DivergenceWarnM, the GPS position wins and a warning names the photo.
+// "time" or "gps_then_time"; validate holds the same set, twice. Time matching
+// gives up past MatchToleranceS from the nearest track point. When both methods
+// answer and disagree by more than DivergenceWarnM, the GPS position wins and a
+// warning names the photo.
 type Photos struct {
 	ClockOffsetS    int    `yaml:"clock_offset_s"`
 	MatchToleranceS int    `yaml:"match_tolerance_s"`

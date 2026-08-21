@@ -24,7 +24,7 @@ You never write code unless the user explicitly asks you to.
 
 `go.mod` may only ever contain: the standard library, `golang.org/x/image`,
 one EXIF library (open decision D1 in the PRD, not chosen yet — isolate it
-behind an interface), and `gopkg.in/yaml.v3`.
+behind an interface), and `go.yaml.in/yaml/v4`.
 
 **Never add**, even to save time: `flopp/go-staticmaps`, `fogleman/gg`,
 `tkrajina/gpxgo`, or any geometry library. GPX parsing uses `encoding/xml`;
