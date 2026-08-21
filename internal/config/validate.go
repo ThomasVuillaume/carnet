@@ -34,9 +34,6 @@ const matchModes = "gps, time, gps_then_time"
 // it hides four of them. Checks run in a fixed order — required keys, then map,
 // privacy, photos — so the report is byte-identical across runs and the reader
 // meets the blocking faults before the tuning ones.
-//
-// Value is left nil on a missing required key: there is no offending input to
-// show, only an absence.
 func validate(c Config) error {
 	var errs ValidationErrors
 
@@ -118,8 +115,6 @@ func validate(c Config) error {
 	switch c.Photos.MatchMode {
 	case "gps", "time", "gps_then_time":
 	default:
-		// An emptied key echoes nothing: "invalid value :" would leave two colons
-		// with no input between them. Any other value is quoted.
 		e := &InvalidConfigError{Key: "photos.match_mode", Reason: "must be one of " + matchModes}
 		if c.Photos.MatchMode != "" {
 			e.Value = c.Photos.MatchMode
