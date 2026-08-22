@@ -71,6 +71,39 @@ La suite de tests doit s'exécuter **entièrement hors ligne** et en moins de
 60 secondes. Aucun test n'accède au réseau : les tuiles de test proviennent
 d'un `embed.FS`.
 
+Les résultats de test sont mis en cache (`ok … (cached)`) tant que le code, les
+fichiers `testdata` lus et l'environnement n'ont pas changé. `-count=1` force la
+réexécution.
+
+### Lancer le binaire
+
+```sh
+go run ./cmd/carnet build --verbose ./trip   # compile dans un dossier temporaire, exécute, jette
+go build -o carnet ./cmd/carnet              # binaire dans le dossier courant
+go install ./cmd/carnet                      # binaire dans $(go env GOPATH)/bin
+```
+
+Les options précèdent le répertoire de voyage : `flag` s'arrête au premier
+argument positionnel, donc `carnet build ./trip --verbose` est rejeté.
+
+`go run` ne grave pas les métadonnées VCS dans le binaire : `carnet version` y
+affiche `carnet (devel)` au lieu de la version dérivée du commit. Pour vérifier
+cette commande, passez par `go build` ou `go install`.
+
+### Boucle de travail
+
+En cours d'écriture, boucle courte sur le paquet touché :
+
+```sh
+go build ./... && go test ./internal/geo/
+```
+
+Avant de commiter, la porte complète :
+
+```sh
+go build ./... && go vet ./... && go test -race ./... && golangci-lint run
+```
+
 ### Stratégie de test : tables de cas
 
 Les tests unitaires du projet sont écrits en **table-driven**, la convention
