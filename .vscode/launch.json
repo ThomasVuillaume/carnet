@@ -1,0 +1,75 @@
+{
+  // Debug configurations for the carnet CLI. One per sub-command of
+  // cmd/carnet/main.go: build, check, version.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // The trip directory is prompted for rather than hard-coded: it lives
+      // outside the repository (photos are private) and changes every trip.
+      "name": "carnet build <trip-dir>",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/carnet",
+      "cwd": "${workspaceFolder}",
+      "args": ["build", "${input:tripDir}", "--verbose"],
+      // integratedTerminal, not the debug console: it forwards Ctrl-C, which is
+      // the only way to exercise the SIGINT path of signal.NotifyContext, and it
+      // reports the exit code (0/1/2/3) of the CLI contract.
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "carnet check <trip-dir>",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/carnet",
+      "cwd": "${workspaceFolder}",
+      "args": ["check", "${input:tripDir}", "--verbose"],
+      "console": "integratedTerminal"
+    },
+    {
+      // mode "debug" builds with go build, so the linker stamps vcs.revision and
+      // formatVersion prints the real pseudo-version. "go run" would not.
+      "name": "carnet version",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/carnet",
+      "cwd": "${workspaceFolder}",
+      "args": ["version"],
+      "console": "integratedTerminal"
+    },
+    {
+      // No args at all: prints usage on stderr and exits 1. Kept as a
+      // configuration because that dispatch branch is part of the contract.
+      "name": "carnet (no command)",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/carnet",
+      "cwd": "${workspaceFolder}",
+      "args": [],
+      "console": "integratedTerminal"
+    },
+    {
+      // Debugs the test function under the cursor, race detector on, as the
+      // Definition of Done requires.
+      "name": "Debug test at cursor",
+      "type": "go",
+      "request": "launch",
+      "mode": "test",
+      "program": "${fileDirname}",
+      "buildFlags": "-race",
+      "args": ["-test.run", "${selectedText}", "-test.v"]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "tripDir",
+      "type": "promptString",
+      "description": "Path to the trip directory (GPX + photos + carnet.yaml)",
+      "default": "${workspaceFolder}/testdata"
+    }
+  ]
+}

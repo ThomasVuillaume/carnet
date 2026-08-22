@@ -65,9 +65,8 @@ func printUsage(w io.Writer) {
 // derived from. Writers are injected rather than taken from os so tests can
 // hand it buffers, and args excludes the program name.
 //
-// Both writers are already in the signature though no command writes yet: the
-// report of check goes to stdout, its slog lines to stderr, and adding the
-// parameters later would touch every call site.
+// stdout carries command output — version prints there, the report of check
+// will follow. stderr carries usage and the slog lines.
 func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	if len(args) == 0 {
 		printUsage(stderr)
@@ -80,7 +79,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	case "check":
 		return errors.New("check: not implemented yet")
 	case "version":
-		return errors.New("version: not implemented yet")
+		return printVersion(stdout)
 	default:
 		printUsage(stderr)
 		return fmt.Errorf("unknown command %q", args[0])

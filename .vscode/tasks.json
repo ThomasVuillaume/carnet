@@ -1,0 +1,149 @@
+{
+  // Tasks mirror the commands of CLAUDE.md so that what runs locally is what
+  // the Definition of Done checks. Nothing here touches the network.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "go: build",
+      "type": "shell",
+      "command": "go build ./...",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$go"],
+      "presentation": { "reveal": "silent", "clear": true }
+    },
+    {
+      "label": "go: vet",
+      "type": "shell",
+      "command": "go vet ./...",
+      "group": "build",
+      "problemMatcher": ["$go"],
+      "presentation": { "reveal": "silent", "clear": true }
+    },
+    {
+      "label": "go: fmt",
+      "type": "shell",
+      // gofmt -l reports what it rewrote; -w does the rewriting. Without -l the
+      // task succeeds silently and the diff is a surprise at commit time.
+      "command": "gofmt -l -w .",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "clear": true }
+    },
+    {
+      "label": "go: mod tidy",
+      "type": "shell",
+      // The dependency list is frozen by the PRD. Run this to prune, then read
+      // the go.mod diff: any new require line is a rule violation.
+      "command": "go mod tidy && git --no-pager diff --stat go.mod go.sum",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "clear": true }
+    },
+    {
+      "label": "lint: golangci-lint",
+      "type": "shell",
+      "command": "golangci-lint run",
+      "group": "build",
+      // golangci-lint prints file:line:col: message, which $go does not match:
+      // $go expects the leading tab of a compiler error.
+      "problemMatcher": {
+        "owner": "go",
+        "source": "golangci-lint",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^([^\\s][^:]*):(\\d+):(\\d+):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        }
+      },
+      "presentation": { "reveal": "always", "clear": true }
+    },
+    {
+      "label": "test: race",
+      "type": "shell",
+      // -race is not optional: the tile downloader is concurrent and
+      // determinism is the property most likely to break there.
+      "command": "go test -race ./...",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": ["$go"],
+      "presentation": { "reveal": "always", "clear": true }
+    },
+    {
+      "label": "test: package of current file",
+      "type": "shell",
+      "command": "go test -race -v ./${relativeFileDirname}",
+      "group": "test",
+      "problemMatcher": ["$go"],
+      "presentation": { "reveal": "always", "clear": true }
+    },
+    {
+      "label": "test: coverage profile",
+      "type": "shell",
+      // coverage.out is gitignored. It feeds both the HTML report and the gate.
+      "command": "go test -race -coverprofile=coverage.out ./...",
+      "group": "test",
+      "problemMatcher": ["$go"],
+      "presentation": { "reveal": "always", "clear": true }
+    },
+    {
+      "label": "test: coverage report (html)",
+      "type": "shell",
+      "command": "go tool cover -html=coverage.out",
+      "dependsOn": ["test: coverage profile"],
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent" }
+    },
+    {
+      "label": "test: coverage gate",
+      "type": "shell",
+      // CLAUDE.md requires coverage above 85% on internal/geo, internal/gpx and
+      // internal/privacy — and only those three. Exits non-zero when one falls
+      // below, so the task is a gate and not a report.
+      //
+      // The profile is read directly rather than through "go tool cover -func".
+      // -func prints one percentage per function; averaging those weights a
+      // three-line helper like the rest of the package. Each profile line is
+      // "file:start.col,end.col numStatements executionCount", so summing
+      // numStatements gives the statement-weighted figure the floor is about.
+      //
+      // One "go test ./..." run, not one per package: the race detector
+      // dominates the runtime here.
+      //
+      // A package with no Go files yet is skipped, not failed — internal/privacy
+      // is empty until S4. tot == 0 only ever means "nothing compiled": an
+      // instrumented package contributes its statements to the profile even
+      // when no test touches them.
+      "command": "go test -race -coverprofile=coverage.out ./... >/dev/null && awk 'BEGIN { floor = 85; n = split(\"geo gpx privacy\", pkg, \" \") } NR > 1 { split($1, f, \":\"); for (i = 1; i <= n; i++) if (index(f[1], \"carnet/internal/\" pkg[i] \"/\") == 1) { tot[i] += $2; if ($3 > 0) cov[i] += $2 } } END { for (i = 1; i <= n; i++) { if (tot[i] == 0) { printf \"internal/%-8s  no Go files yet, skipped\\n\", pkg[i]; continue } pct = 100 * cov[i] / tot[i]; printf \"internal/%-8s  %5.1f%%  %s\\n\", pkg[i], pct, (pct < floor ? \"FAIL\" : \"ok\"); if (pct < floor) bad = 1 } if (bad) printf \"coverage floor is %d%%\\n\", floor; exit bad + 0 }' coverage.out",
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "clear": true }
+    },
+    {
+      "label": "test: golden files (update)",
+      "type": "shell",
+      // Rewrites testdata/golden/. Run it only after eyeballing the render
+      // change: -update makes every golden test pass by definition.
+      "command": "go test ./internal/render/... -update",
+      "problemMatcher": ["$go"],
+      "presentation": { "reveal": "always", "clear": true }
+    },
+    {
+      "label": "carnet: version",
+      "type": "shell",
+      // go run leaves Main.Version at "(devel)" with no vcs.* setting. Building
+      // first is the only way to see the line a user will see.
+      "command": "go build -o ${workspaceFolder}/carnet ./cmd/carnet && ${workspaceFolder}/carnet version",
+      "problemMatcher": ["$go"],
+      "presentation": { "reveal": "always", "clear": true }
+    },
+    {
+      "label": "check: all",
+      // Sequence, not parallel: a compile error should surface before a lint
+      // report built on stale objects.
+      "dependsOrder": "sequence",
+      "dependsOn": ["go: build", "go: vet", "lint: golangci-lint", "test: race"],
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}
